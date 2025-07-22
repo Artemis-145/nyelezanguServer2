@@ -1,0 +1,21 @@
+{
+  "name": "nyele-zangu-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@emailjs/nodejs": "^5.0.2",
+    "africastalking": "^0.7.3",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "firebase": "^12.0.0",
+    "firebase-admin": "^13.4.0",
+    "uuid": "^11.1.0"
+  }
+}
