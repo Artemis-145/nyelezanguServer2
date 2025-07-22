@@ -146,7 +146,7 @@ router.post('/verify-code-salon', async (req, res) => {
     ...meta,
     email: email.toLowerCase(),
     approved: false,
-    createdAt: serverTimestamp(),
+    createdAt: Timestamp.now(),
   });
 
   await db.collection('verifications').doc(email.toLowerCase()).delete();
