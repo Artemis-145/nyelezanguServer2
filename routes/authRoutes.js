@@ -141,14 +141,6 @@ router.post('/verify-code-salon', async (req, res) => {
   if (!snap.exists || snap.data().code !== code) { 
     return res.status(400).json({ success: false, message: 'Invalid or expired code' });
   }
-
-  const { meta } = snap.data();
-  await db.collection('salons').add({
-    ...meta,
-    email: email.toLowerCase(),
-    approved: false,
-    createdAt: Timestamp.now(),
-  });
   // ✅ Create user
     const userRecord = await admin.auth().createUser({
       email: snap.data()?.meta?.email,
@@ -156,6 +148,14 @@ router.post('/verify-code-salon', async (req, res) => {
       displayName: snap.data()?.meta?.name,
       phoneNumber: snap.data()?.meta?.phone,
     });
+  const { meta } = snap.data();
+  await db.collection('salons').doc(userRecord.uid).set({
+    ...meta,
+    email: email.toLowerCase(),
+    approved: false,
+    createdAt: Timestamp.now(),
+  });
+  
 
     // ✅ Save profile
     await db.collection('users').doc(userRecord.uid).set({
