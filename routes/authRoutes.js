@@ -88,6 +88,7 @@ router.post('/verify-code', async (req, res) => {
       name: data.name,
       email: data.email,
       phone: data.phone,
+      type:"client",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -148,6 +149,23 @@ router.post('/verify-code-salon', async (req, res) => {
     approved: false,
     createdAt: Timestamp.now(),
   });
+  // ✅ Create user
+    const userRecord = await admin.auth().createUser({
+      email: snap.data().email,
+      password: snap.data().password,
+      displayName: snap.data().name,
+      phoneNumber: snap.data().phone,
+    });
+
+    // ✅ Save profile
+    await db.collection('users').doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      name: snap.data().name,
+      email: snap.data().email,
+      phone: snap.data().phone,
+      type:"saloon",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
 
   await db.collection('verifications').doc(email.toLowerCase()).delete();
   res.json({ success: true });
