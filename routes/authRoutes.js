@@ -101,6 +101,68 @@ router.post('/verify-code', async (req, res) => {
   }
 });
 
+router.post('/send-code-salon', async (req, res) => {
+  const { name, email, phone, address, country, password, services, location } = req.body;
+
+  if (!name || !email || !phone || !password || !address || !country) {
+    return res.status(400).json({ success: false, message: 'Missing required fields.' });
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  try {
+    await db.collection('verifications').add({
+      type: 'salon',
+      contact: email, 
+      code,
+      meta: { name, email, phone, address, country, password, services, location },
+      createdAt: serverTimestamp(),
+    });
+
+    await sendVerificationEmail({ to_name: name, to_email: email, code });
+    await sendSMS(phone, `Your Nyele Zangu Salon verification code is ${code}`);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('send-code-salon error:', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// routes/authSalonRoutes.js (continued)
+router.post('/verify-code-salon', async (req, res) => {
+  const { verificationId, code } = req.body;
+
+  if (!verificationId || !code) {
+    return res.status(400).json({ success: false, message: 'Missing code or ID.' });
+  }
+
+  try {
+    const docRef = db.collection('verifications').doc(verificationId);
+    const snap = await docRef.get();
+
+    if (!snap.exists || snap.data().code !== code) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired code.' });
+    }
+
+    const { meta } = snap.data();
+    const salonData = {
+      ...meta,
+      services: meta.services || [],
+      location: meta.location || null,
+      approved: false,
+      createdAt: serverTimestamp(),
+    };
+
+    const salonDoc = await db.collection('salons').add(salonData);
+    await docRef.delete();
+
+    res.json({ success: true, salonId: salonDoc.id });
+  } catch (err) {
+    console.error('verify-code‑salon error:', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
 
 
 module.exports = router;
