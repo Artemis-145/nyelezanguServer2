@@ -131,38 +131,26 @@ router.post('/send-code-salon', async (req, res) => {
 
 // routes/authSalonRoutes.js (continued)
 router.post('/verify-code-salon', async (req, res) => {
-  const { verificationId, code } = req.body;
+  const { email, code } = req.body;
+  if (!email || !code) return res.status(400).json({ success: false, message: 'Missing email or code' });
 
-  if (!verificationId || !code) {
-    return res.status(400).json({ success: false, message: 'Missing code or ID.' });
+  const snap = await db.collection('verifications').doc(email.toLowerCase()).get();
+  if (!snap.exists || snap.data().code !== code) {
+    return res.status(400).json({ success: false, message: 'Invalid or expired code' });
   }
 
-  try {
-    const docRef = db.collection('verifications').doc(verificationId);
-    const snap = await docRef.get();
+  const { meta } = snap.data();
+  await db.collection('salons').add({
+    ...meta,
+    email: email.toLowerCase(),
+    approved: false,
+    createdAt: serverTimestamp(),
+  });
 
-    if (!snap.exists || snap.data().code !== code) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired code.' });
-    }
-
-    const { meta } = snap.data();
-    const salonData = {
-      ...meta,
-      services: meta.services || [],
-      location: meta.location || null,
-      approved: false,
-      createdAt: Timestamp.now(),
-    };
-
-    const salonDoc = await db.collection('salons').add(salonData);
-    await docRef.delete();
-
-    res.status(200).json({ success: true, salonId: salonDoc.id });
-  } catch (err) {
-    console.error('verify-code‑salon error:', err);
-    res.status(500).json({ success: false, message: 'Server error.' });
-  }
+  await db.collection('verifications').doc(email.toLowerCase()).delete();
+  res.json({ success: true });
 });
+
 
 
 module.exports = router;
