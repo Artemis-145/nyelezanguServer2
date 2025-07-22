@@ -151,18 +151,18 @@ router.post('/verify-code-salon', async (req, res) => {
   });
   // ✅ Create user
     const userRecord = await admin.auth().createUser({
-      email: snap.data().email,
-      password: snap.data().password,
-      displayName: snap.data().name,
-      phoneNumber: snap.data().phone,
+      email: snap.data()?.meta?.email,
+      password: snap.data()?.meta?.password,
+      displayName: snap.data()?.meta?.name,
+      phoneNumber: snap.data()?.meta?.phone,
     });
 
     // ✅ Save profile
     await db.collection('users').doc(userRecord.uid).set({
       uid: userRecord.uid,
-      name: snap.data().name,
-      email: snap.data().email,
-      phone: snap.data().phone,
+      name: snap.data()?.meta?.name,
+      email: snap.data()?.meta?.email,
+      phone: snap.data()?.meta?.phone,
       type:"saloon",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
