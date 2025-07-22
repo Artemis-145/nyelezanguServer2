@@ -111,7 +111,7 @@ router.post('/send-code-salon', async (req, res) => {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
 
   try {
-    await db.collection('verifications').add({
+    await db.collection('verifications').doc(email).set({
       type: 'salon',
       contact: email, 
       code,
@@ -134,8 +134,10 @@ router.post('/verify-code-salon', async (req, res) => {
   const { email, code } = req.body;
   if (!email || !code) return res.status(400).json({ success: false, message: 'Missing email or code' });
 
-  const snap = await db.collection('verifications').doc(email.toLowerCase()).get();
-  if (!snap.exists || snap.data().code !== code) {
+  // const snap = await db.collection('verifications').doc(email.toLowerCase()).get();
+  const snap = await db.collection('verifications').doc(email).get();
+  console.log(snap.data());
+  if (!snap.exists || snap.data().code !== code) { 
     return res.status(400).json({ success: false, message: 'Invalid or expired code' });
   }
 
