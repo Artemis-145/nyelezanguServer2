@@ -116,13 +116,13 @@ router.post('/send-code-salon', async (req, res) => {
       contact: email, 
       code,
       meta: { name, email, phone, address, country, password, services, location },
-      createdAt: serverTimestamp(),
+      createdAt: Timestamp.now(),
     });
 
     await sendVerificationEmail({ to_name: name, to_email: email, code });
     await sendSMS(phone, `Your Nyele Zangu Salon verification code is ${code}`);
 
-    res.json({ success: true });
+    res.status(200).json({ success: true });
   } catch (err) {
     console.error('send-code-salon error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -151,13 +151,13 @@ router.post('/verify-code-salon', async (req, res) => {
       services: meta.services || [],
       location: meta.location || null,
       approved: false,
-      createdAt: serverTimestamp(),
+      createdAt: Timestamp.now(),
     };
 
     const salonDoc = await db.collection('salons').add(salonData);
     await docRef.delete();
 
-    res.json({ success: true, salonId: salonDoc.id });
+    res.status(200).json({ success: true, salonId: salonDoc.id });
   } catch (err) {
     console.error('verify-code‑salon error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
