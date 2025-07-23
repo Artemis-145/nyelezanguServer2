@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 // Routes
 
 app.use('/auth', authRoutes); // ← New auth endpoints
-app.use('/api/book',bookRoutes);
+app.use('/api',bookRoutes);
 
 
 // Start MQTT connection

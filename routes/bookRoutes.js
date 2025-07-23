@@ -5,7 +5,7 @@ const { sendEmail } = require('../services/emailService');
 const { db } = require('../services/firebaseAdmin');
 
 // POST /api/book
-router.post('/', async (req, res) => {
+router.post('/book', async (req, res) => {
   console.log(req.url);
 
   try {
@@ -38,6 +38,28 @@ router.post('/', async (req, res) => {
 
   } catch (error) {
     console.error('Booking notification error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+router.post('/book-response', async (req, res) => {
+
+  try {
+    const { userId, status,name, email, phone, salonName } = req.body;
+
+  if (!userId || !status || !email || !phone || !name) {
+    return res.status(400).json({ error: 'Missing required data' });
+  }
+
+
+
+    // Notify user
+    const userMsg = `Hi ${name}, Your booking at ${salonName} has been ${status}. Check your application for more information.\nThank you for using Nyele Zangu`;
+    await sendSMS(phone, userMsg);
+    await sendEmail(email, `Booking Status at ${salonName}`, userMsg);
+    res.status(200).json({ message: 'Notifications sent successfully' });
+
+  } catch (error) {
+    console.error('Approval notification error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
