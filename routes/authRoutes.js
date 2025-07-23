@@ -131,44 +131,94 @@ router.post('/send-code-salon', async (req, res) => {
 });
 
 // routes/authSalonRoutes.js (continued)
-router.post('/verify-code-salon', async (req, res) => {
-  const { email, code } = req.body;
-  if (!email || !code) return res.status(400).json({ success: false, message: 'Missing email or code' });
+// router.post('/verify-code-salon', async (req, res) => {
+//   const { email, code } = req.body;
+//   if (!email || !code) return res.status(400).json({ success: false, message: 'Missing email or code' });
 
-  // const snap = await db.collection('verifications').doc(email.toLowerCase()).get();
-  const snap = await db.collection('verifications').doc(email).get();
-  console.log(snap.data());
-  if (!snap.exists || snap.data().code !== code) { 
-    return res.status(400).json({ success: false, message: 'Invalid or expired code' });
-  }
-  // ✅ Create user
-    const userRecord = await admin.auth().createUser({
-      email: snap.data()?.meta?.email,
-      password: snap.data()?.meta?.password,
-      displayName: snap.data()?.meta?.name,
-      phoneNumber: snap.data()?.meta?.phone,
-    });
-  const { meta } = snap.data();
-  await db.collection('salons').doc(userRecord.uid).set({
-    ...meta,
-    email: email.toLowerCase(),
-    approved: false,
-    createdAt: Timestamp.now(),
-  });
+//   // const snap = await db.collection('verifications').doc(email.toLowerCase()).get();
+//   const snap = await db.collection('verifications').doc(email).get();
+//   console.log(snap.data());
+//   if (!snap.exists || snap.data().code !== code) { 
+//     return res.status(400).json({ success: false, message: 'Invalid or expired code' });
+//   }
+//   // ✅ Create user
+//     const userRecord = await admin.auth().createUser({
+//       email: snap.data()?.meta?.email,
+//       password: snap.data()?.meta?.password,
+//       displayName: snap.data()?.meta?.name,
+//       phoneNumber: snap.data()?.meta?.phone,
+//     });
+//     console.log(userRecord.uid);
+//   const { meta } = snap.data();
+//   await db.collection('salons').doc(userRecord.uid).set({
+//     ...meta,
+//     email: email.toLowerCase(),
+//     approved: false,
+//     createdAt: Timestamp.now(),
+//   });
   
 
-    // ✅ Save profile
+//     // ✅ Save profile
+//     await db.collection('users').doc(userRecord.uid).set({
+//       uid: userRecord.uid,
+//       name: snap.data()?.meta?.name,
+//       email: snap.data()?.meta?.email,
+//       phone: snap.data()?.meta?.phone,
+//       type:"saloon",
+//       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+//     });
+
+//   await db.collection('verifications').doc(email.toLowerCase()).delete();
+//   res.json({ success: true });
+// });
+router.post('/verify-code-salon', async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) {
+    return res.status(400).json({ success: false, message: 'Missing email or code' });
+  }
+
+  const emailKey = email.toLowerCase();
+
+  try {
+    const snap = await db.collection('verifications').doc(emailKey).get();
+
+    if (!snap.exists || snap.data().code !== code) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired code' });
+    }
+
+    const { meta } = snap.data();
+
+    const userRecord = await admin.auth().createUser({
+      email: meta.email,
+      password: meta.password,
+      displayName: meta.name,
+      // phoneNumber: meta.phone,
+    });
+
+    await db.collection('salons').doc(userRecord.uid).set({
+      ...meta,
+      email: emailKey,
+      approved: false,
+      createdAt: admin.firestore.Timestamp.now(),
+    });
+
     await db.collection('users').doc(userRecord.uid).set({
       uid: userRecord.uid,
-      name: snap.data()?.meta?.name,
-      email: snap.data()?.meta?.email,
-      phone: snap.data()?.meta?.phone,
-      type:"saloon",
+      name: meta.name,
+      email: meta.email,
+      phone: meta.phone,
+      type: "saloon",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-  await db.collection('verifications').doc(email.toLowerCase()).delete();
-  res.json({ success: true });
+    await db.collection('verifications').doc(emailKey).delete();
+
+    return res.json({ success: true });
+
+  } catch (error) {
+    console.error('Error verifying code:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
 
